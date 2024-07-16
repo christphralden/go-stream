@@ -18,7 +18,7 @@ func (m Binary) Bytes() []byte{
 	return m
 }
 
-func (m Binary) WriteTo(w io.Writer) (int64, error){
+func (m Binary) WriteTo(w io.Writer) (int64, error) {
 
 	err := binary.Write(w, binary.BigEndian, uint32(len(m)))
 
@@ -32,7 +32,7 @@ func (m Binary) WriteTo(w io.Writer) (int64, error){
 	return int64(n+4), err
 }
 
-func (m *Binary) ReadFrom(r io.Reader) (int64, error){
+func (m *Binary) ReadFrom(r io.Reader) (int64, error) {
 	var size int32
 
 	err := binary.Read(r, binary.BigEndian, &size)
@@ -49,7 +49,7 @@ func (m *Binary) ReadFrom(r io.Reader) (int64, error){
 	return int64(n+4), err
 }
 
-func Decode(r io.Reader) (Payload, error){
+func Decode(r io.Reader) (Payload, error) {
 	payload := new(Binary)
 
 	_, err := payload.ReadFrom(r)

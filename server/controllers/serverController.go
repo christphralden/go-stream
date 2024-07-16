@@ -6,13 +6,13 @@ import (
 	"net"
 	"sync"
 
-	"github.com/christpheralden/go-stream/server/types"
+	"github.com/christpheralden/go-stream/types"
 )
 
 
 const (
   TCP = "tcp"
-  UDP = "UDP"
+  UDP = "udp"
 )
 
 type ServerOptionFunc func (*ServerOptions)
@@ -35,7 +35,7 @@ type Server struct{
 func defaultOptions() ServerOptions {
   return ServerOptions{
     Id: "default",
-    Protocol: "tcp",
+    Protocol: TCP,
     ListenAddr: "localhost:3306",
     MaxConn: 100,
     Tls: false,
@@ -130,25 +130,25 @@ func (s *Server) Stop() {
 		s.Ln.Close()
 	}
 	s.Wg.Wait()
-	log.Println("Server shusddown")
+	log.Println("Server shutdown")
 }
 
 
-func (s *Server) AcceptLoop() error {
+func (s *Server) AcceptLoop() {
   for{
     conn, err := s.Ln.Accept()
 
     if err != nil {
-      if err == io.EOF{
-        log.Println("Client has disconnected")
-      }else{
-        log.Println("Something went wrong")
-      }
-
+      select {
+      case <-s.QuitCh:
+        return
+      default:
+        log.Println("Error accepting connection: ", err)
+      } 
       continue
     }
 
-
+    s.Wg.Add(1)
     go s.readLoop(conn)
   }
 }
@@ -156,6 +156,7 @@ func (s *Server) AcceptLoop() error {
 
 func (s *Server) readLoop(conn net.Conn) {
   defer conn.Close()
+  defer s.Wg.Done()
 
   for{
     payload, err := types.Decode(conn)
@@ -164,20 +165,20 @@ func (s *Server) readLoop(conn net.Conn) {
       if err == io.EOF{
         log.Println("Client has disconnected")
       }else{
-        log.Println("Something went wrong")
+        log.Println("Something went wrong: ", err)
       }
 
       break
     }
 
-    log.Println("Recieved bytes: ", payload.Bytes())
+    log.Println("Server recieved: ", string(payload.Bytes()))
 
     reply := types.Binary("Read")
 
     _, err = reply.WriteTo(conn)
     
     if err != nil {
-      log.Println("Error writing response")
+      log.Println("Error writing response: ", err)
       break
     }
   }
