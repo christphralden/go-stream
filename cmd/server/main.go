@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/christpheralden/go-stream/internal/core"
+	"github.com/christpheralden/go-stream/internal/server/core"
 )
 
 func main() {
